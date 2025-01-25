@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 
-interface StorybookParams {
+export interface StorybookParams {
   storybookId: string;
 }
 

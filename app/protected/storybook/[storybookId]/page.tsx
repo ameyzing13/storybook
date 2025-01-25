@@ -4,12 +4,10 @@ import StorybookEditor from "@/components/storybook/StorybookEditor";
 import StorybookSidebar from "@/components/storybook/StorybookSidebar";
 import { notFound } from "next/navigation";
 import { Metadata, ResolvingMetadata } from "next";
-import { validateAndGetParams } from "@/utils/params";
+import { validateAndGetParams, StorybookParams } from "@/utils/params";
 
 interface PageProps {
-  params: {
-    storybookId: string;
-  };
+  params: StorybookParams | Promise<StorybookParams>;
   searchParams: { [key: string]: string | string[] | undefined };
 }
 
