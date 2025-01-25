@@ -4,6 +4,7 @@ import { encodedRedirect } from "@/utils/utils";
 import { createClient } from "@/utils/supabase/server";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
+import { revalidatePath } from 'next/cache';
 
 export const signUpAction = async (formData: FormData) => {
   const email = formData.get("email")?.toString();
@@ -53,6 +54,7 @@ export const signInAction = async (formData: FormData) => {
     return encodedRedirect("error", "/sign-in", error.message);
   }
 
+  revalidatePath('/', 'layout');
   return redirect("/protected");
 };
 
@@ -127,8 +129,9 @@ export const resetPasswordAction = async (formData: FormData) => {
   encodedRedirect("success", "/protected/reset-password", "Password updated");
 };
 
-export const signOutAction = async () => {
+export async function signOut() {
   const supabase = await createClient();
   await supabase.auth.signOut();
-  return redirect("/sign-in");
-};
+  revalidatePath('/', 'layout');
+  redirect('/');
+}

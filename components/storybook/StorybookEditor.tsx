@@ -8,6 +8,7 @@ import { createClient } from '@/utils/supabase/client';
 import StoriesCarousel from './StoriesCarousel';
 import { Story } from '@/types/supabase';
 import Link from 'next/link';
+import { UserAvatar } from '@/components/user-avatar';
 
 interface StorybookEditorProps {
   storybookId: string;
@@ -98,13 +99,16 @@ export default function StorybookEditor({ storybookId, user }: StorybookEditorPr
             </Link>
             <h2 className="text-lg font-medium text-gray-900">Stories</h2>
           </div>
-          <button
-            onClick={createNewStory}
-            className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 flex items-center gap-2 shadow-sm"
-          >
-            <Plus className="h-4 w-4" />
-            <span>New Story</span>
-          </button>
+          <div className="flex items-center gap-4">
+            <button
+              onClick={createNewStory}
+              className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 flex items-center gap-2 shadow-sm"
+            >
+              <Plus className="h-4 w-4" />
+              <span>New Story</span>
+            </button>
+            <UserAvatar />
+          </div>
         </div>
       </header>
 
