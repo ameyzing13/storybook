@@ -7,7 +7,7 @@ import { Metadata, ResolvingMetadata } from "next";
 import { validateAndGetParams, StorybookParams } from "@/utils/params";
 
 interface PageProps {
-  params: StorybookParams | Promise<StorybookParams>;
+  params: Promise<StorybookParams>;
   searchParams: { [key: string]: string | string[] | undefined };
 }
 

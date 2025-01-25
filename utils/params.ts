@@ -8,13 +8,11 @@ interface StoryParams extends StorybookParams {
   storyId: string;
 }
 
-export async function validateAndGetParams<T extends Record<string, string>>(params: T | Promise<T>): Promise<T> {
+export async function validateAndGetParams<T extends StorybookParams>(params: Promise<T>): Promise<T> {
   const resolvedParams = await params;
   
-  for (const [key, value] of Object.entries(resolvedParams)) {
-    if (!value || Array.isArray(value)) {
-      notFound();
-    }
+  if (!resolvedParams.storybookId || Array.isArray(resolvedParams.storybookId)) {
+    notFound();
   }
   
   return resolvedParams;
