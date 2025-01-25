@@ -1,12 +1,13 @@
 'use client';
 
 import { User } from '@supabase/supabase-js';
-import { Plus } from 'lucide-react';
+import { Plus, ChevronLeft } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { createClient } from '@/utils/supabase/client';
 import StoriesCarousel from './StoriesCarousel';
 import { Story } from '@/types/supabase';
+import Link from 'next/link';
 
 interface StorybookEditorProps {
   storybookId: string;
@@ -85,15 +86,24 @@ export default function StorybookEditor({ storybookId, user }: StorybookEditorPr
   return (
     <div className="flex-1 flex flex-col min-w-0">
       {/* Top Navigation */}
-      <header className="bg-white border-b border-gray-200 px-4 lg:px-6 py-4">
-        <div className="flex items-center justify-between">
-          <h2 className="text-lg font-medium text-gray-900">Stories</h2>
+      <header className="bg-white border-b border-gray-200 px-4 lg:px-6">
+        <div className="flex items-center justify-between h-16">
+          <div className="flex items-center gap-4">
+            <Link
+              href="/protected"
+              className="flex items-center text-sm text-gray-600 hover:text-gray-900"
+            >
+              <ChevronLeft className="h-4 w-4 mr-1" />
+              Back
+            </Link>
+            <h2 className="text-lg font-medium text-gray-900">Stories</h2>
+          </div>
           <button
             onClick={createNewStory}
             className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 flex items-center gap-2 shadow-sm"
           >
             <Plus className="h-4 w-4" />
-            <span className="hidden sm:inline">New Story</span>
+            <span>New Story</span>
           </button>
         </div>
       </header>
