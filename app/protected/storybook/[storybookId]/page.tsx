@@ -3,7 +3,6 @@ import { redirect } from "next/navigation";
 import StorybookEditor from "@/components/storybook/StorybookEditor";
 import StorybookSidebar from "@/components/storybook/StorybookSidebar";
 import MobileNav from "@/components/storybook/MobileNav";
-import MobileOverlay from "@/components/storybook/MobileOverlay";
 import { notFound } from "next/navigation";
 import { Metadata, ResolvingMetadata } from "next";
 import { validateAndGetParams, StorybookParams } from "@/utils/params";
@@ -72,12 +71,24 @@ export default async function StorybookPage(props: PageProps) {
         id="mobile-sidebar"
         className="fixed inset-y-0 left-0 w-full sm:w-80 transform -translate-x-full lg:relative lg:translate-x-0 transition-transform duration-200 ease-in-out z-40 lg:z-0 bg-white shadow-lg lg:shadow-none"
       >
-        <div className="h-full overflow-y-auto overscroll-contain">
+        <div className="h-full overflow-y-auto">
           <StorybookSidebar storybookId={resolvedParams.storybookId} user={user} />
         </div>
       </div>
 
-      <MobileOverlay />
+      {/* Mobile Overlay */}
+      <div 
+        id="mobile-overlay"
+        className="fixed inset-0 bg-black bg-opacity-50 opacity-0 pointer-events-none transition-opacity duration-200 ease-in-out z-30 lg:hidden"
+        onClick={() => {
+          const sidebar = document.getElementById('mobile-sidebar');
+          const overlay = document.getElementById('mobile-overlay');
+          if (sidebar && overlay) {
+            sidebar.classList.add('-translate-x-full');
+            overlay.classList.remove('opacity-100', 'pointer-events-auto');
+          }
+        }}
+      />
 
       {/* Main Content */}
       <div className="flex-1 min-w-0 h-full overflow-hidden">
