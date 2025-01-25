@@ -37,19 +37,14 @@ export default function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
-          <main className="min-h-screen w-full flex flex-col items-center">
-            <div >
-              <div className="flex flex-col ">
-                {children}
-              </div>
-
-              <footer className="w-full flex items-center justify-center border-t mx-auto text-center text-xs gap-8 py-16">
-                <p>
-                  Made with ❤️
-                </p>
+          <main className="min-h-screen flex flex-col">
+            {children}
+            <footer className="w-full border-t py-4 text-center text-xs">
+              <div className="max-w-7xl mx-auto px-4 flex items-center justify-center gap-8">
+                <p>Made with ❤️</p>
                 <ThemeSwitcher />
-              </footer>
-            </div>
+              </div>
+            </footer>
           </main>
         </ThemeProvider>
       </body>
