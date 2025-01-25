@@ -24,14 +24,24 @@ export default function StorybookEditor({ storybookId, user }: StorybookEditorPr
   }, [storybookId]);
 
   async function fetchStories() {
-    const { data } = await supabase
-      .from('stories')
-      .select('*')
-      .eq('storybook_id', storybookId)
-      .order('order', { ascending: true });
+    try {
+      const { data, error } = await supabase
+        .from('stories')
+        .select('id, title, content, created_at, updated_at, storybook_id, user_id, order')
+        .eq('storybook_id', storybookId)
+        .order('order', { ascending: true });
 
-    if (data) {
-      setStories(data);
+      if (error) {
+        console.error('Error fetching stories:', error);
+        return;
+      }
+
+      if (data) {
+        console.log('Fetched stories:', data); // Debug log
+        setStories(data);
+      }
+    } catch (error) {
+      console.error('Error in fetchStories:', error);
     }
     setIsLoading(false);
   }
