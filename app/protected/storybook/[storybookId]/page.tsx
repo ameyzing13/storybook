@@ -3,7 +3,8 @@ import { redirect } from "next/navigation";
 import StorybookEditor from "@/components/storybook/StorybookEditor";
 import StorybookSidebar from "@/components/storybook/StorybookSidebar";
 import { notFound } from "next/navigation";
-import { Metadata } from "next";
+import { Metadata, ResolvingMetadata } from "next";
+import { validateAndGetParams } from "@/utils/params";
 
 interface PageProps {
   params: {
@@ -12,26 +13,34 @@ interface PageProps {
   searchParams: { [key: string]: string | string[] | undefined };
 }
 
-export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
+export async function generateMetadata(
+  props: PageProps,
+  parent: ResolvingMetadata
+): Promise<Metadata> {
+  const { params } = props;
+  const resolvedParams = await validateAndGetParams(params);
   const supabase = await createClient();
   
   const { data: storybook } = await supabase
     .from('storybooks')
     .select('title')
-    .eq('id', params.storybookId)
+    .eq('id', resolvedParams.storybookId)
     .single();
+
+  const previousImages = (await parent).openGraph?.images || [];
 
   return {
     title: storybook?.title || 'Storybook',
+    openGraph: {
+      images: [...previousImages],
+    },
   };
 }
 
-export default async function StorybookPage({
-  params,
-  searchParams,
-}: PageProps) {
+export default async function StorybookPage(props: PageProps) {
+  const { params } = props;
+  const resolvedParams = await validateAndGetParams(params);
   const supabase = await createClient();
-  const storybookId = params.storybookId;
 
   const {
     data: { user },
@@ -45,7 +54,7 @@ export default async function StorybookPage({
   const { data: storybook } = await supabase
     .from('storybooks')
     .select('*')
-    .eq('id', storybookId)
+    .eq('id', resolvedParams.storybookId)
     .eq('user_id', user.id)
     .single();
 
@@ -55,8 +64,8 @@ export default async function StorybookPage({
 
   return (
     <div className="flex-1 flex h-screen bg-gray-50">
-      <StorybookSidebar storybookId={storybookId} user={user} />
-      <StorybookEditor storybookId={storybookId} user={user} />
+      <StorybookSidebar storybookId={resolvedParams.storybookId} user={user} />
+      <StorybookEditor storybookId={resolvedParams.storybookId} user={user} />
     </div>
   );
 } 

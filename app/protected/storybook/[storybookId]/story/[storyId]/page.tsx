@@ -2,7 +2,8 @@ import { createClient } from "@/utils/supabase/server";
 import { redirect } from "next/navigation";
 import StoryEditor from "@/components/story/StoryEditor";
 import { notFound } from "next/navigation";
-import { Metadata } from "next";
+import { Metadata, ResolvingMetadata } from "next";
+import { validateAndGetParams } from "@/utils/params";
 
 interface PageProps {
   params: {
@@ -12,26 +13,34 @@ interface PageProps {
   searchParams: { [key: string]: string | string[] | undefined };
 }
 
-export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
+export async function generateMetadata(
+  props: PageProps,
+  parent: ResolvingMetadata
+): Promise<Metadata> {
+  const { params } = props;
+  const resolvedParams = await validateAndGetParams(params);
   const supabase = await createClient();
   
   const { data: story } = await supabase
     .from('stories')
     .select('title')
-    .eq('id', params.storyId)
+    .eq('id', resolvedParams.storyId)
     .single();
+
+  const previousImages = (await parent).openGraph?.images || [];
 
   return {
     title: story?.title || 'Story',
+    openGraph: {
+      images: [...previousImages],
+    },
   };
 }
 
-export default async function StoryPage({
-  params,
-  searchParams,
-}: PageProps) {
+export default async function StoryPage(props: PageProps) {
+  const { params } = props;
+  const resolvedParams = await validateAndGetParams(params);
   const supabase = await createClient();
-  const { storybookId, storyId } = params;
 
   const {
     data: { user },
@@ -45,7 +54,7 @@ export default async function StoryPage({
   const { data: storybook } = await supabase
     .from('storybooks')
     .select('*')
-    .eq('id', storybookId)
+    .eq('id', resolvedParams.storybookId)
     .eq('user_id', user.id)
     .single();
 
@@ -57,8 +66,8 @@ export default async function StoryPage({
   const { data: story } = await supabase
     .from('stories')
     .select('*')
-    .eq('id', storyId)
-    .eq('storybook_id', storybookId)
+    .eq('id', resolvedParams.storyId)
+    .eq('storybook_id', resolvedParams.storybookId)
     .single();
 
   if (!story) {
@@ -68,8 +77,8 @@ export default async function StoryPage({
   return (
     <div className="flex-1 flex flex-col min-h-screen bg-gray-50">
       <StoryEditor 
-        storybookId={storybookId} 
-        storyId={storyId}
+        storybookId={resolvedParams.storybookId} 
+        storyId={resolvedParams.storyId}
         user={user}
       />
     </div>
