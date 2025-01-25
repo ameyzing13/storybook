@@ -85,42 +85,44 @@ export default function StorybookEditor({ storybookId, user }: StorybookEditorPr
   return (
     <div className="flex-1 flex flex-col min-w-0">
       {/* Top Navigation */}
-      <header className="bg-white border-b border-gray-200 px-6 py-4">
+      <header className="bg-white border-b border-gray-200 px-4 lg:px-6 py-4">
         <div className="flex items-center justify-between">
           <h2 className="text-lg font-medium text-gray-900">Stories</h2>
           <button
             onClick={createNewStory}
-            className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 flex items-center gap-2"
+            className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 flex items-center gap-2 shadow-sm"
           >
             <Plus className="h-4 w-4" />
-            New Story
+            <span className="hidden sm:inline">New Story</span>
           </button>
         </div>
       </header>
 
       {/* Stories Carousel */}
-      <main className="flex-1 p-6 overflow-hidden">
+      <main className="flex-1 p-4 lg:p-6 overflow-hidden">
         {stories.length === 0 ? (
-          <div className="text-center py-12">
+          <div className="text-center py-8 lg:py-12">
             <h3 className="text-lg font-medium text-gray-900 mb-2">
               No stories yet
             </h3>
-            <p className="text-gray-500 mb-6">
+            <p className="text-gray-500 mb-6 px-4">
               Start creating memories by adding your first story
             </p>
             <button
               onClick={createNewStory}
-              className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+              className="inline-flex items-center gap-2 px-6 py-3 bg-blue-600 text-white rounded-md hover:bg-blue-700 shadow-sm"
             >
               <Plus className="h-4 w-4" />
               New Story
             </button>
           </div>
         ) : (
-          <StoriesCarousel
-            stories={stories}
-            onStoryClick={(storyId) => router.push(`/protected/storybook/${storybookId}/story/${storyId}`)}
-          />
+          <div className="h-full overflow-x-auto overflow-y-hidden">
+            <StoriesCarousel
+              stories={stories}
+              onStoryClick={(storyId) => router.push(`/protected/storybook/${storybookId}/story/${storyId}`)}
+            />
+          </div>
         )}
       </main>
     </div>

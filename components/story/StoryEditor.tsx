@@ -3,7 +3,7 @@
 import { User } from '@supabase/supabase-js';
 import { useState, useEffect } from 'react';
 import { createClient } from '@/utils/supabase/client';
-import { ChevronLeft, Save, BookOpen, MessageCircle, RefreshCw, History } from 'lucide-react';
+import { ChevronLeft, Save, BookOpen, MessageCircle, RefreshCw, History, X } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import TextEditor from './TextEditor';
 import VoiceRecorder from './VoiceRecorder';
@@ -281,27 +281,27 @@ export default function StoryEditor({ storybookId, storyId, user }: StoryEditorP
                   await handleSave();
                   router.push(`/protected/storybook/${storybookId}`);
                 }}
-                className="flex items-center text-sm text-gray-500 hover:text-gray-700"
+                className="flex items-center text-sm text-gray-500 hover:text-gray-700 py-2"
               >
                 <ChevronLeft className="h-4 w-4 mr-1" />
                 Back to Storybook
               </button>
-              <div className="flex items-center gap-3">
-                <span className="text-sm text-gray-500">
+              <div className="flex items-center gap-2 lg:gap-3">
+                <span className="text-sm text-gray-500 hidden sm:inline">
                   {wordCount} {wordCount === 1 ? 'word' : 'words'}
                 </span>
                 {lastSaved && (
-                  <span className="text-sm text-gray-500">
+                  <span className="text-sm text-gray-500 hidden sm:inline">
                     Last saved {lastSaved.toLocaleTimeString()}
                   </span>
                 )}
                 <button
                   onClick={handleSave}
                   disabled={isSaving}
-                  className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50"
+                  className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 shadow-sm"
                 >
                   <Save className="h-4 w-4" />
-                  {isSaving ? 'Saving...' : 'Save'}
+                  <span className="hidden sm:inline">{isSaving ? 'Saving...' : 'Save'}</span>
                 </button>
               </div>
             </div>
@@ -310,13 +310,13 @@ export default function StoryEditor({ storybookId, storyId, user }: StoryEditorP
 
         {/* Main Editor */}
         <main className="flex-1 overflow-auto">
-          <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-6 lg:py-8">
             <input
               type="text"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               placeholder="Enter story title..."
-              className="w-full text-3xl font-semibold bg-transparent border-b border-gray-200 pb-2 mb-8 focus:outline-none focus:border-blue-500"
+              className="w-full text-2xl lg:text-3xl font-semibold bg-transparent border-b border-gray-200 pb-2 mb-6 lg:mb-8 focus:outline-none focus:border-blue-500"
             />
 
             <TextEditor
@@ -340,24 +340,55 @@ export default function StoryEditor({ storybookId, storyId, user }: StoryEditorP
       </div>
 
       {/* Life Coach Analysis */}
-      <div className="border-t lg:border-t-0 lg:border-l border-gray-200 lg:w-80 xl:w-96 flex-shrink-0 bg-gray-50">
-        <div className="p-6">
+      <div className="lg:hidden">
+        <button
+          onClick={() => {
+            const panel = document.getElementById('analysis-panel');
+            if (panel) {
+              panel.classList.toggle('translate-y-0');
+              panel.classList.toggle('translate-y-full');
+            }
+          }}
+          className="fixed bottom-4 right-4 z-30 p-3 bg-blue-600 text-white rounded-full shadow-lg"
+        >
+          <MessageCircle className="h-6 w-6" />
+        </button>
+      </div>
+
+      <div 
+        id="analysis-panel"
+        className="fixed inset-x-0 bottom-0 transform translate-y-full lg:relative lg:translate-y-0 transition duration-200 ease-in-out z-20 lg:z-0 border-t lg:border-t-0 lg:border-l border-gray-200 lg:w-80 xl:w-96 flex-shrink-0 bg-gray-50 max-h-[80vh] lg:max-h-none overflow-y-auto"
+      >
+        <div className="p-4 lg:p-6">
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-2">
               <MessageCircle className="h-5 w-5 text-gray-600" />
               <h2 className="text-lg font-semibold text-gray-900">Life Coach Analysis</h2>
             </div>
-            <button
-              onClick={generateQuestions}
-              disabled={isAnalyzing || !content.trim()}
-              className={`p-2 rounded-full transition-all ${
-                isAnalyzing 
-                  ? 'bg-gray-100 text-gray-400'
-                  : 'hover:bg-gray-100 text-gray-600 hover:text-gray-900'
-              }`}
-            >
-              <RefreshCw className={`h-5 w-5 ${isAnalyzing ? 'animate-spin' : ''}`} />
-            </button>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={generateQuestions}
+                disabled={isAnalyzing || !content.trim()}
+                className={`p-2 rounded-full transition-all ${
+                  isAnalyzing 
+                    ? 'bg-gray-100 text-gray-400'
+                    : 'hover:bg-gray-100 text-gray-600 hover:text-gray-900'
+                }`}
+              >
+                <RefreshCw className={`h-5 w-5 ${isAnalyzing ? 'animate-spin' : ''}`} />
+              </button>
+              <button
+                onClick={() => {
+                  const panel = document.getElementById('analysis-panel');
+                  if (panel) {
+                    panel.classList.add('translate-y-full');
+                  }
+                }}
+                className="p-2 rounded-full hover:bg-gray-100 text-gray-600 lg:hidden"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
           </div>
 
           {/* Context Balance Slider */}
@@ -397,14 +428,14 @@ export default function StoryEditor({ storybookId, storyId, user }: StoryEditorP
               <div
                 key={q.id}
                 onClick={() => !q.isLoading && handleQuestionClick(q.id, q.question)}
-                className={`group relative bg-white rounded-lg p-3 shadow-sm transition-all ${
+                className={`group relative bg-white rounded-lg p-4 shadow-sm transition-all ${
                   q.isLoading ? 'opacity-50 cursor-not-allowed' : 
                   q.isSelected ? 'ring-2 ring-blue-500 shadow-md' :
                   'hover:shadow-md cursor-pointer transform hover:-translate-y-0.5'
                 }`}
               >
                 <div className="flex flex-col space-y-2">
-                  <div className={`inline-block px-2 py-0.5 text-xs font-medium rounded-md ${getCategoryColor(q.category)}`}>
+                  <div className={`inline-block px-2 py-1 text-xs font-medium rounded-md ${getCategoryColor(q.category)}`}>
                     {q.category.charAt(0).toUpperCase() + q.category.slice(1)}
                   </div>
                   <p className="text-sm text-gray-700">{q.question}</p>
@@ -420,7 +451,7 @@ export default function StoryEditor({ storybookId, storyId, user }: StoryEditorP
                   
                   {/* Selected indicator */}
                   {q.isSelected && (
-                    <div className="flex items-center gap-1 text-green-600 text-xs font-medium">
+                    <div className="flex items-center gap-1 text-green-600 text-xs font-medium mt-2">
                       <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                       </svg>

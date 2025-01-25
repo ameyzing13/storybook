@@ -61,38 +61,38 @@ export default function StorybookSidebar({ storybookId, user }: StorybookSidebar
   if (!storybook) return null;
 
   return (
-    <aside className="w-64 bg-white border-r border-gray-200 flex flex-col">
-      <div className="p-6">
+    <aside className="w-full lg:w-64 bg-white border-r border-gray-200 flex flex-col h-full">
+      <div className="p-4 lg:p-6">
         <Link
           href="/protected"
-          className="flex items-center text-sm text-gray-500 hover:text-gray-700 mb-6"
+          className="flex items-center text-sm text-gray-500 hover:text-gray-700 mb-4 lg:mb-6 py-2"
         >
           <ChevronLeft className="h-4 w-4 mr-1" />
           Back to Library
         </Link>
 
-        <div className="aspect-video bg-gray-100 rounded-lg mb-6"></div>
+        <div className="aspect-video bg-gray-100 rounded-lg mb-4 lg:mb-6"></div>
         
-        <div className="mb-6">
+        <div className="mb-4 lg:mb-6">
           {isEditing ? (
             <div className="space-y-2">
               <input
                 type="text"
                 value={editedTitle}
                 onChange={(e) => setEditedTitle(e.target.value)}
-                className="w-full px-2 py-1 text-lg font-semibold border-b border-gray-300 focus:border-blue-500 focus:outline-none"
+                className="w-full px-3 py-2 text-lg font-semibold border rounded-md focus:border-blue-500 focus:outline-none"
               />
               <div className="flex justify-end gap-2">
                 <button
                   onClick={() => setIsEditing(false)}
-                  className="text-sm text-gray-500 hover:text-gray-700"
+                  className="px-3 py-2 text-sm text-gray-500 hover:text-gray-700 rounded-md"
                 >
                   Cancel
                 </button>
                 <button
                   onClick={handleSaveTitle}
                   disabled={isSaving}
-                  className="text-sm text-blue-600 hover:text-blue-700 font-medium"
+                  className="px-3 py-2 text-sm text-white bg-blue-600 hover:bg-blue-700 rounded-md disabled:opacity-50"
                 >
                   {isSaving ? 'Saving...' : 'Save'}
                 </button>
@@ -100,23 +100,23 @@ export default function StorybookSidebar({ storybookId, user }: StorybookSidebar
             </div>
           ) : (
             <div className="group relative">
-              <h1 className="text-xl font-semibold text-gray-900 pr-8">
+              <h1 className="text-xl font-semibold text-gray-900 pr-8 break-words">
                 {storybook.title}
               </h1>
               <button
                 onClick={() => setIsEditing(true)}
-                className="absolute top-1 right-0 opacity-0 group-hover:opacity-100 transition-opacity"
+                className="absolute top-1 right-0 p-2 opacity-0 group-hover:opacity-100 transition-opacity"
               >
                 <Edit2 className="h-4 w-4 text-gray-400 hover:text-gray-600" />
               </button>
             </div>
           )}
-          <p className="text-sm text-gray-500 mt-1">
+          <p className="text-sm text-gray-500 mt-2">
             For: {storybook.target_audience}
           </p>
         </div>
 
-        <div className="text-sm text-gray-500">
+        <div className="text-sm text-gray-500 py-2">
           Created {new Date(storybook.created_at).toLocaleDateString()}
         </div>
       </div>

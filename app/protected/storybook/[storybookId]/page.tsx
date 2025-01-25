@@ -2,9 +2,12 @@ import { createClient } from "@/utils/supabase/server";
 import { redirect } from "next/navigation";
 import StorybookEditor from "@/components/storybook/StorybookEditor";
 import StorybookSidebar from "@/components/storybook/StorybookSidebar";
+import MobileNav from "@/components/storybook/MobileNav";
+import MobileOverlay from "@/components/storybook/MobileOverlay";
 import { notFound } from "next/navigation";
 import { Metadata, ResolvingMetadata } from "next";
 import { validateAndGetParams, StorybookParams } from "@/utils/params";
+import { Menu } from "lucide-react";
 
 interface PageProps {
   params: Promise<StorybookParams>;
@@ -61,9 +64,25 @@ export default async function StorybookPage(props: PageProps) {
   }
 
   return (
-    <div className="flex-1 flex h-screen bg-gray-50">
-      <StorybookSidebar storybookId={resolvedParams.storybookId} user={user} />
-      <StorybookEditor storybookId={resolvedParams.storybookId} user={user} />
+    <div className="flex-1 flex flex-col h-[100dvh] overflow-hidden bg-gray-50">
+      <MobileNav />
+      
+      {/* Mobile Sidebar */}
+      <div 
+        id="mobile-sidebar"
+        className="fixed inset-y-0 left-0 w-full sm:w-80 transform -translate-x-full lg:relative lg:translate-x-0 transition-transform duration-200 ease-in-out z-40 lg:z-0 bg-white shadow-lg lg:shadow-none"
+      >
+        <div className="h-full overflow-y-auto overscroll-contain">
+          <StorybookSidebar storybookId={resolvedParams.storybookId} user={user} />
+        </div>
+      </div>
+
+      <MobileOverlay />
+
+      {/* Main Content */}
+      <div className="flex-1 min-w-0 h-full overflow-hidden">
+        <StorybookEditor storybookId={resolvedParams.storybookId} user={user} />
+      </div>
     </div>
   );
 } 
