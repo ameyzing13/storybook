@@ -6,14 +6,7 @@ import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { createClient } from '@/utils/supabase/client';
 import StoriesCarousel from './StoriesCarousel';
-
-interface Story {
-  id: string;
-  title: string;
-  content: string | null;
-  created_at: string;
-  updated_at: string;
-}
+import { Story } from '@/types/supabase';
 
 interface StorybookEditorProps {
   storybookId: string;
