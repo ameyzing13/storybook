@@ -8,6 +8,17 @@ export type Storybook = {
   story_count?: number;
 }
 
+export interface Story {
+  id: string;
+  title: string;
+  content: string | null;
+  created_at: string;
+  updated_at: string;
+  storybook_id: string;
+  user_id: string;
+  order: number;
+}
+
 export type Json =
   | string
   | number
@@ -54,6 +65,7 @@ export interface Database {
           content: string | null
           storybook_id: string
           user_id: string
+          order: number
         }
         Insert: {
           id?: string
@@ -63,6 +75,7 @@ export interface Database {
           content?: string | null
           storybook_id: string
           user_id: string
+          order: number
         }
         Update: {
           id?: string
@@ -72,6 +85,7 @@ export interface Database {
           content?: string | null
           storybook_id?: string
           user_id?: string
+          order?: number
         }
       }
     }

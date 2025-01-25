@@ -5,6 +5,7 @@ import { Plus } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { createClient } from '@/utils/supabase/client';
+import StoriesCarousel from './StoriesCarousel';
 
 interface Story {
   id: string;
@@ -34,7 +35,7 @@ export default function StorybookEditor({ storybookId, user }: StorybookEditorPr
       .from('stories')
       .select('*')
       .eq('storybook_id', storybookId)
-      .order('created_at', { ascending: false });
+      .order('order', { ascending: true });
 
     if (data) {
       setStories(data);
@@ -43,6 +44,17 @@ export default function StorybookEditor({ storybookId, user }: StorybookEditorPr
   }
 
   async function createNewStory() {
+    // Get the highest order number
+    const { data: highestOrder } = await supabase
+      .from('stories')
+      .select('order')
+      .eq('storybook_id', storybookId)
+      .order('order', { ascending: false })
+      .limit(1)
+      .single();
+
+    const nextOrder = (highestOrder?.order || 0) + 1;
+
     const { data: newStory, error } = await supabase
       .from('stories')
       .insert([
@@ -51,6 +63,7 @@ export default function StorybookEditor({ storybookId, user }: StorybookEditorPr
           storybook_id: storybookId,
           user_id: user.id,
           content: '',
+          order: nextOrder,
         },
       ])
       .select()
@@ -82,49 +95,30 @@ export default function StorybookEditor({ storybookId, user }: StorybookEditorPr
         </div>
       </header>
 
-      {/* Stories Grid */}
-      <main className="flex-1 p-6 overflow-auto">
-        <div className="max-w-7xl mx-auto w-full">
-          {stories.length === 0 ? (
-            <div className="text-center py-12">
-              <h3 className="text-lg font-medium text-gray-900 mb-2">
-                No stories yet
-              </h3>
-              <p className="text-gray-500 mb-6">
-                Start creating memories by adding your first story
-              </p>
-              <button
-                onClick={createNewStory}
-                className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
-              >
-                <Plus className="h-4 w-4" />
-                New Story
-              </button>
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {stories.map((story) => (
-                <div
-                  key={story.id}
-                  className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 hover:shadow-md transition-all cursor-pointer"
-                  onClick={() => {
-                    router.push(`/protected/storybook/${storybookId}/story/${story.id}`);
-                  }}
-                >
-                  <h3 className="font-medium text-gray-900 mb-2">{story.title}</h3>
-                  <p className="text-sm text-gray-500">
-                    Last updated: {new Date(story.updated_at).toLocaleDateString()}
-                  </p>
-                  {story.content && (
-                    <p className="text-sm text-gray-700 mt-2 line-clamp-3">
-                      {story.content}
-                    </p>
-                  )}
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
+      {/* Stories Carousel */}
+      <main className="flex-1 p-6 overflow-hidden">
+        {stories.length === 0 ? (
+          <div className="text-center py-12">
+            <h3 className="text-lg font-medium text-gray-900 mb-2">
+              No stories yet
+            </h3>
+            <p className="text-gray-500 mb-6">
+              Start creating memories by adding your first story
+            </p>
+            <button
+              onClick={createNewStory}
+              className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+            >
+              <Plus className="h-4 w-4" />
+              New Story
+            </button>
+          </div>
+        ) : (
+          <StoriesCarousel
+            stories={stories}
+            onStoryClick={(storyId) => router.push(`/protected/storybook/${storybookId}/story/${storyId}`)}
+          />
+        )}
       </main>
     </div>
   );

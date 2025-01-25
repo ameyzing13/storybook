@@ -8,7 +8,7 @@ import { validateAndGetParams, StorybookParams } from "@/utils/params";
 
 interface PageProps {
   params: Promise<StorybookParams>;
-  searchParams: { [key: string]: string | string[] | undefined };
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
 }
 
 export async function generateMetadata(
