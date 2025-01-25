@@ -30,9 +30,12 @@ export default function VoiceRecorder({ onTranscription, onClose }: VoiceRecorde
   const [duration, setDuration] = useState(0);
   const [isProcessing, setIsProcessing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [fileSize, setFileSize] = useState(0);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const chunksRef = useRef<Blob[]>([]);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
+
+  const MAX_FILE_SIZE = 25 * 1024 * 1024; // 25MB in bytes
 
   useEffect(() => {
     startRecording();
@@ -49,6 +52,7 @@ export default function VoiceRecorder({ onTranscription, onClose }: VoiceRecorde
   const startRecording = async () => {
     try {
       setError(null);
+      setFileSize(0);
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       const mimeType = getSupportedMimeType();
       const mediaRecorder = new MediaRecorder(stream, { mimeType });
@@ -59,6 +63,14 @@ export default function VoiceRecorder({ onTranscription, onClose }: VoiceRecorde
       mediaRecorder.ondataavailable = (e) => {
         if (e.data.size > 0) {
           chunksRef.current.push(e.data);
+          // Calculate total size
+          const totalSize = chunksRef.current.reduce((acc, chunk) => acc + chunk.size, 0);
+          setFileSize(totalSize);
+          
+          // Stop recording if size exceeds 25MB
+          if (totalSize >= MAX_FILE_SIZE && mediaRecorderRef.current) {
+            mediaRecorderRef.current.stop();
+          }
         }
       };
 
@@ -148,6 +160,8 @@ export default function VoiceRecorder({ onTranscription, onClose }: VoiceRecorde
     );
   }
 
+  const fileSizePercentage = Math.min(100, Math.round((fileSize / MAX_FILE_SIZE) * 100));
+
   return (
     <div className="flex items-center gap-3">
       <div className="relative">
@@ -155,8 +169,17 @@ export default function VoiceRecorder({ onTranscription, onClose }: VoiceRecorde
         <div className="absolute -top-1 -right-1 h-2 w-2 rounded-full bg-red-500 animate-pulse" />
       </div>
       <div className="flex flex-col">
-        <span className="font-medium">{formatDuration(duration)}</span>
-        <span className="text-sm">Click anywhere to stop</span>
+        <div className="flex items-center gap-2">
+          <span className="font-medium">{formatDuration(duration)}</span>
+          <span className="text-xs text-gray-500">({fileSizePercentage}%)</span>
+        </div>
+        <div className="w-32 h-1 bg-gray-200 rounded-full mt-1">
+          <div 
+            className="h-full bg-blue-600 rounded-full transition-all duration-300"
+            style={{ width: `${fileSizePercentage}%` }}
+          />
+        </div>
+        <span className="text-sm mt-1">Click anywhere to stop</span>
       </div>
     </div>
   );

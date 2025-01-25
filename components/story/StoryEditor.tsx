@@ -3,7 +3,7 @@
 import { User } from '@supabase/supabase-js';
 import { useState, useEffect } from 'react';
 import { createClient } from '@/utils/supabase/client';
-import { ChevronLeft, Save, BookOpen, MessageCircle, RefreshCw } from 'lucide-react';
+import { ChevronLeft, Save, BookOpen, MessageCircle, RefreshCw, History } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import TextEditor from './TextEditor';
 import VoiceRecorder from './VoiceRecorder';
@@ -56,6 +56,7 @@ export default function StoryEditor({ storybookId, storyId, user }: StoryEditorP
   const [questions, setQuestions] = useState<DynamicQuestion[]>(SAMPLE_QUESTIONS);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [editor, setEditor] = useState<Editor | null>(null);
+  const [contextBalance, setContextBalance] = useState(50);
 
   useEffect(() => {
     async function loadStory() {
@@ -119,16 +120,27 @@ export default function StoryEditor({ storybookId, storyId, user }: StoryEditorP
     if (!content.trim() || isAnalyzing) return;
 
     setIsAnalyzing(true);
-    // Show loading state for existing questions
     setQuestions(questions.map(q => ({ ...q, isLoading: true })));
 
     try {
+      // Split content into paragraphs
+      const paragraphs = content.split('\n\n').filter(p => p.trim());
+      
+      // Get the most recent paragraph as Tier 1
+      const newContent = paragraphs[paragraphs.length - 1] || '';
+      
+      // Get the rest as Tier 2 context
+      const existingContent = paragraphs.slice(0, -1).join('\n\n');
+
       const response = await fetch('/api/analyze', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ content }),
+        body: JSON.stringify({ 
+          newContent,
+          existingContent
+        }),
       });
 
       if (!response.ok) {
@@ -145,7 +157,44 @@ export default function StoryEditor({ storybookId, storyId, user }: StoryEditorP
       }
     } catch (error) {
       console.error('Error generating questions:', error);
-      // Restore original questions on error
+      setQuestions(SAMPLE_QUESTIONS);
+    } finally {
+      setIsAnalyzing(false);
+    }
+  };
+
+  const generateQuestionsWithContext = async (balance: number) => {
+    if (!content.trim() || isAnalyzing) return;
+
+    setIsAnalyzing(true);
+    setQuestions(questions.map(q => ({ ...q, isLoading: true })));
+
+    try {
+      const response = await fetch('/api/analyze', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ 
+          content,
+          contextBalance: balance
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to analyze content');
+      }
+
+      const data = await response.json();
+      if (data.questions) {
+        setQuestions(data.questions.map((q: DynamicQuestion, index: number) => ({
+          ...q,
+          id: `dynamic-${index}`,
+          isLoading: false,
+        })));
+      }
+    } catch (error) {
+      console.error('Error generating questions:', error);
       setQuestions(SAMPLE_QUESTIONS);
     } finally {
       setIsAnalyzing(false);
@@ -207,8 +256,9 @@ export default function StoryEditor({ storybookId, storyId, user }: StoryEditorP
     // Save the story
     await handleSave();
 
-    // Generate new questions based on updated content
-    await generateQuestions();
+    // Generate new questions with focus on recent content
+    setContextBalance(0); // Set to focus on most recent content
+    await generateQuestionsWithContext(0);
   };
 
   if (isLoading) {
@@ -308,6 +358,38 @@ export default function StoryEditor({ storybookId, storyId, user }: StoryEditorP
             >
               <RefreshCw className={`h-5 w-5 ${isAnalyzing ? 'animate-spin' : ''}`} />
             </button>
+          </div>
+
+          {/* Context Balance Slider */}
+          <div className="mb-6 bg-white rounded-lg p-3 shadow-sm">
+            <div className="flex items-center justify-between mb-2">
+              <div className="flex items-center gap-2">
+                <History className="h-4 w-4 text-gray-600" />
+                <span className="text-sm font-medium text-gray-700">Context Balance</span>
+              </div>
+              <span className="text-xs text-gray-500">
+                {contextBalance === 0 ? 'Most Recent Only' : 
+                 contextBalance === 100 ? 'Full Context' :
+                 `${contextBalance}% Context`}
+              </span>
+            </div>
+            <input
+              type="range"
+              min="0"
+              max="100"
+              value={contextBalance}
+              onChange={(e) => {
+                setContextBalance(Number(e.target.value));
+                if (!isAnalyzing) {
+                  generateQuestionsWithContext(Number(e.target.value));
+                }
+              }}
+              className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-blue-600"
+            />
+            <div className="flex justify-between mt-1">
+              <span className="text-xs text-gray-500">Recent Focus</span>
+              <span className="text-xs text-gray-500">Full Context</span>
+            </div>
           </div>
           
           <div className="space-y-3">
