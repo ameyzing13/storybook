@@ -138,28 +138,33 @@ export default function StoryEditor({ storybookId, storyId, user }: StoryEditorP
         </div>
       </main>
 
-      {/* Voice Recording FAB */}
-      <button
-        onClick={() => setIsRecording(!isRecording)}
-        className={`fixed bottom-8 right-8 p-4 rounded-full shadow-lg transition-all ${
-          isRecording 
-            ? 'bg-red-500 hover:bg-red-600 animate-pulse' 
-            : 'bg-blue-600 hover:bg-blue-700'
-        }`}
-      >
-        {isRecording ? (
-          <MicOff className="h-6 w-6 text-white" />
-        ) : (
-          <Mic className="h-6 w-6 text-white" />
-        )}
-      </button>
+      {/* Voice Recording Button */}
+      <div className="fixed bottom-8 right-8 flex flex-col items-center gap-2">
+        <button
+          onClick={() => setIsRecording(!isRecording)}
+          className={`group relative w-16 h-16 flex items-center justify-center rounded-full shadow-lg transition-all ${
+            isRecording 
+              ? 'bg-red-500 hover:bg-red-600 animate-pulse' 
+              : 'bg-blue-600 hover:bg-blue-700'
+          }`}
+        >
+          {isRecording ? (
+            <MicOff className="h-6 w-6 text-white" />
+          ) : (
+            <Mic className="h-6 w-6 text-white" />
+          )}
+          <span className="absolute -top-8 scale-0 transition-all group-hover:scale-100 bg-gray-900 text-white text-xs py-1 px-2 rounded">
+            {isRecording ? 'Stop Recording' : 'Start Recording'}
+          </span>
+        </button>
+      </div>
 
       {/* Voice Recording Modal */}
       {isRecording && (
         <VoiceRecorder
           onClose={() => setIsRecording(false)}
-          onTranscription={(text) => {
-            setContent((prev) => prev + ' ' + text);
+          onTranscription={(text: string) => {
+            setContent((prev) => prev + '\n\n' + text);
             setIsRecording(false);
           }}
         />
