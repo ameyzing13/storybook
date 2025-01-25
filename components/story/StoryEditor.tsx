@@ -91,7 +91,10 @@ export default function StoryEditor({ storybookId, storyId, user }: StoryEditorP
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="py-4 flex items-center justify-between">
             <button
-              onClick={() => router.push(`/protected/storybook/${storybookId}`)}
+              onClick={async () => {
+                await handleSave();
+                router.push(`/protected/storybook/${storybookId}`);
+              }}
               className="flex items-center text-sm text-gray-500 hover:text-gray-700"
             >
               <ChevronLeft className="h-4 w-4 mr-1" />
