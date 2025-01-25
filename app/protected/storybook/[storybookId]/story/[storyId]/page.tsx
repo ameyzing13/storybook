@@ -3,14 +3,15 @@ import { redirect } from "next/navigation";
 import StoryEditor from "@/components/story/StoryEditor";
 import { notFound } from "next/navigation";
 import { Metadata, ResolvingMetadata } from "next";
-import { validateAndGetParams } from "@/utils/params";
+
+interface StoryParams {
+  storybookId: string;
+  storyId: string;
+}
 
 interface PageProps {
-  params: {
-    storybookId: string;
-    storyId: string;
-  };
-  searchParams: { [key: string]: string | string[] | undefined };
+  params: Promise<StoryParams>;
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
 }
 
 export async function generateMetadata(
@@ -18,7 +19,7 @@ export async function generateMetadata(
   parent: ResolvingMetadata
 ): Promise<Metadata> {
   const { params } = props;
-  const resolvedParams = await validateAndGetParams(params);
+  const resolvedParams = await params;
   const supabase = await createClient();
   
   const { data: story } = await supabase
@@ -39,7 +40,7 @@ export async function generateMetadata(
 
 export default async function StoryPage(props: PageProps) {
   const { params } = props;
-  const resolvedParams = await validateAndGetParams(params);
+  const resolvedParams = await params;
   const supabase = await createClient();
 
   const {
