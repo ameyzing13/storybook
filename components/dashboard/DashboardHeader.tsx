@@ -85,9 +85,7 @@ export default function DashboardHeader({ user }: DashboardHeaderProps) {
           </div>
         </div>
       </header>
-      <div className="bg-gray-50 px-6 py-4">
-        <h1 className="text-2xl font-semibold text-gray-900">Your Storybooks</h1>
-      </div>
+      
     </>
   );
 } 
