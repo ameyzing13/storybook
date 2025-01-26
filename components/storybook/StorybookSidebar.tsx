@@ -64,7 +64,7 @@ export default function StorybookSidebar({ storybookId, user }: StorybookSidebar
     <aside className="w-full lg:w-64 bg-white border-r border-gray-200 flex flex-col h-full">
       <div className="p-4 lg:p-6">
         <Link
-          href="/protected"
+          href="/protected/journal"
           className="flex items-center text-sm text-gray-500 hover:text-gray-700 mb-4 lg:mb-6 py-2"
         >
           <ChevronLeft className="h-4 w-4 mr-1" />

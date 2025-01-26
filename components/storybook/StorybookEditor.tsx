@@ -91,7 +91,7 @@ export default function StorybookEditor({ storybookId, user }: StorybookEditorPr
         <div className="flex items-center justify-between h-16">
           <div className="flex items-center gap-4">
             <Link
-              href="/protected"
+              href="/protected/journal"
               className="flex items-center text-sm text-gray-600 hover:text-gray-900"
             >
               <ChevronLeft className="h-4 w-4 mr-1" />

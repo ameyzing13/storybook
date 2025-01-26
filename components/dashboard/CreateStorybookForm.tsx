@@ -26,7 +26,7 @@ export default function CreateStorybookForm({ user }: CreateStorybookFormProps) 
 
     const supabase = createClient();
 
-    const { error: insertError } = await supabase
+    const { data, error: insertError } = await supabase
       .from('storybooks')
       .insert([
         {
@@ -35,7 +35,9 @@ export default function CreateStorybookForm({ user }: CreateStorybookFormProps) 
           user_id: user.id,
           story_count: 0,
         },
-      ]);
+      ])
+      .select()
+      .single();
 
     if (insertError) {
       setError(insertError.message);
@@ -43,7 +45,8 @@ export default function CreateStorybookForm({ user }: CreateStorybookFormProps) 
       return;
     }
 
-    router.push('/protected');
+    // Redirect to the newly created storybook
+    router.push(`/protected/storybook/${data.id}`);
     router.refresh();
   }
 
@@ -51,7 +54,7 @@ export default function CreateStorybookForm({ user }: CreateStorybookFormProps) 
     <div className="max-w-2xl mx-auto">
       <div className="mb-6">
         <Link
-          href="/protected"
+          href="/protected/journal"
           className="inline-flex items-center text-sm text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white transition-colors"
         >
           <svg
