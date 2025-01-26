@@ -3,7 +3,7 @@
 import { User } from '@supabase/supabase-js';
 import { useState, useEffect } from 'react';
 import { createClient } from '@/utils/supabase/client';
-import { ChevronLeft, Save, BookOpen, MessageCircle, RefreshCw, History, X } from 'lucide-react';
+import { ChevronLeft, Save, BookOpen, MessageCircle, RefreshCw, History, X, Trash2 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import TextEditor from './TextEditor';
 import VoiceRecorder from './VoiceRecorder';
@@ -48,6 +48,7 @@ export default function StoryEditor({ storybookId, storyId, user }: StoryEditorP
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
   const [isRecording, setIsRecording] = useState(false);
+  const [isProcessingRecording, setIsProcessingRecording] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -116,53 +117,6 @@ export default function StoryEditor({ storybookId, storyId, user }: StoryEditorP
     setWordCount(words.length);
   }, [content]);
 
-  const generateQuestions = async () => {
-    if (!content.trim() || isAnalyzing) return;
-
-    setIsAnalyzing(true);
-    setQuestions(questions.map(q => ({ ...q, isLoading: true })));
-
-    try {
-      // Split content into paragraphs
-      const paragraphs = content.split('\n\n').filter(p => p.trim());
-      
-      // Get the most recent paragraph as Tier 1
-      const newContent = paragraphs[paragraphs.length - 1] || '';
-      
-      // Get the rest as Tier 2 context
-      const existingContent = paragraphs.slice(0, -1).join('\n\n');
-
-      const response = await fetch('/api/analyze', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ 
-          newContent,
-          existingContent
-        }),
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to analyze content');
-      }
-
-      const data = await response.json();
-      if (data.questions) {
-        setQuestions(data.questions.map((q: DynamicQuestion, index: number) => ({
-          ...q,
-          id: `dynamic-${index}`,
-          isLoading: false,
-        })));
-      }
-    } catch (error) {
-      console.error('Error generating questions:', error);
-      setQuestions(SAMPLE_QUESTIONS);
-    } finally {
-      setIsAnalyzing(false);
-    }
-  };
-
   const generateQuestionsWithContext = async (balance: number) => {
     if (!content.trim() || isAnalyzing) return;
 
@@ -176,13 +130,14 @@ export default function StoryEditor({ storybookId, storyId, user }: StoryEditorP
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({ 
-          content,
+          content: content.trim(),
           contextBalance: balance
         }),
       });
 
       if (!response.ok) {
-        throw new Error('Failed to analyze content');
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to analyze content');
       }
 
       const data = await response.json();
@@ -192,14 +147,23 @@ export default function StoryEditor({ storybookId, storyId, user }: StoryEditorP
           id: `dynamic-${index}`,
           isLoading: false,
         })));
+      } else {
+        throw new Error('No questions received from analysis');
       }
     } catch (error) {
       console.error('Error generating questions:', error);
-      setQuestions(SAMPLE_QUESTIONS);
+      // Keep the existing questions but mark them as not loading
+      setQuestions(questions.map(q => ({ ...q, isLoading: false })));
+      // Show error in UI
+      const errorMessage = error instanceof Error ? error.message : 'Error generating questions';
+      // You might want to add a toast or error state here to show the error to the user
     } finally {
       setIsAnalyzing(false);
     }
   };
+
+  // Remove the old generateQuestions function if it exists
+  const generateQuestions = generateQuestionsWithContext;
 
   const addQuestionToContent = (question: string) => {
     const questionText = `\n\nReflection Question: ${question}\nMy Answer:\n`;
@@ -236,30 +200,72 @@ export default function StoryEditor({ storybookId, storyId, user }: StoryEditorP
   };
 
   const handleTranscription = async (text: string) => {
-    // First insert the transcribed text
-    if (editor) {
-      const { from } = editor.state.selection;
-      editor.commands.insertContent(`\n${text}\n`);
-      editor.commands.focus();
-      
-      // Scroll to the inserted text
-      const element = document.querySelector('.ProseMirror');
-      if (element) {
-        element.scrollTop = element.scrollHeight;
+    try {
+      // Always add text at the end
+      if (editor) {
+        // Move cursor to end before inserting
+        editor.commands.setTextSelection(editor.state.doc.content.size);
+        editor.commands.insertContent(`\n${text}\n`);
+        editor.commands.focus();
+        
+        // Scroll to the inserted text
+        const element = document.querySelector('.ProseMirror');
+        if (element) {
+          element.scrollTop = element.scrollHeight;
+        }
+      } else {
+        setContent((prev) => `${prev}\n${text}\n`);
       }
-    } else {
-      setContent((prev) => `${prev}\n${text}\n`);
+      
+      // Save the story
+      await handleSave();
+
+      // Generate new questions with focus on recent content
+      setContextBalance(0); // Set to focus on most recent content
+      await generateQuestionsWithContext(0);
+    } finally {
+      // Reset both recording and processing states
+      setIsRecording(false);
+      setIsProcessingRecording(false);
     }
-    
-    setIsRecording(false);
-
-    // Save the story
-    await handleSave();
-
-    // Generate new questions with focus on recent content
-    setContextBalance(0); // Set to focus on most recent content
-    await generateQuestionsWithContext(0);
   };
+
+  // Add keyboard shortcut handler at the StoryEditor level too
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === 's') {
+        e.preventDefault();
+        handleSave();
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [title, content]); // Add dependencies that affect saving
+
+  async function handleDelete() {
+    if (!window.confirm('Are you sure you want to delete this story? This action cannot be undone.')) {
+      return;
+    }
+
+    try {
+      const { error } = await supabase
+        .from('stories')
+        .delete()
+        .eq('id', storyId)
+        .eq('user_id', user.id); // Extra safety check
+
+      if (error) {
+        console.error('Error deleting story:', error);
+        return;
+      }
+
+      router.push(`/protected/storybook/${storybookId}`);
+      router.refresh();
+    } catch (error) {
+      console.error('Error deleting story:', error);
+    }
+  }
 
   if (isLoading) {
     return (
@@ -276,16 +282,25 @@ export default function StoryEditor({ storybookId, storyId, user }: StoryEditorP
         <header className="bg-white border-b border-gray-200">
           <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="py-4 flex items-center justify-between">
-              <button
-                onClick={async () => {
-                  await handleSave();
-                  router.push(`/protected/storybook/${storybookId}`);
-                }}
-                className="flex items-center text-sm text-gray-500 hover:text-gray-700 py-2"
-              >
-                <ChevronLeft className="h-4 w-4 mr-1" />
-                Back to Storybook
-              </button>
+              <div className="flex items-center gap-4">
+                <button
+                  onClick={async () => {
+                    await handleSave();
+                    router.push(`/protected/storybook/${storybookId}`);
+                  }}
+                  className="flex items-center text-sm text-gray-500 hover:text-gray-700 py-2"
+                >
+                  <ChevronLeft className="h-4 w-4 mr-1" />
+                  Back to Storybook
+                </button>
+                <button
+                  onClick={handleDelete}
+                  className="flex items-center gap-1 text-sm text-red-600 hover:text-red-700 py-2"
+                >
+                  <Trash2 className="h-4 w-4" />
+                  <span className="hidden sm:inline">Delete Story</span>
+                </button>
+              </div>
               <div className="flex items-center gap-2 lg:gap-3">
                 <span className="text-sm text-gray-500 hidden sm:inline">
                   {wordCount} {wordCount === 1 ? 'word' : 'words'}
@@ -324,13 +339,19 @@ export default function StoryEditor({ storybookId, storyId, user }: StoryEditorP
               onChange={setContent}
               className="prose max-w-none"
               isRecording={isRecording}
+              isProcessing={isProcessingRecording}
               onToggleRecording={() => setIsRecording(!isRecording)}
               onEditorReady={setEditor}
+              onSave={handleSave}
               voiceRecorderComponent={
                 isRecording && (
                   <VoiceRecorder
                     onClose={() => setIsRecording(false)}
                     onTranscription={handleTranscription}
+                    onProcessingStart={() => {
+                      setIsRecording(false);
+                      setIsProcessingRecording(true);
+                    }}
                   />
                 )
               }
@@ -367,7 +388,7 @@ export default function StoryEditor({ storybookId, storyId, user }: StoryEditorP
             </div>
             <div className="flex items-center gap-2">
               <button
-                onClick={generateQuestions}
+                onClick={() => generateQuestionsWithContext(contextBalance)}
                 disabled={isAnalyzing || !content.trim()}
                 className={`p-2 rounded-full transition-all ${
                   isAnalyzing 

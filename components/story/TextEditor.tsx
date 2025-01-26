@@ -11,9 +11,11 @@ interface TextEditorProps {
   onChange: (content: string) => void;
   className?: string;
   isRecording?: boolean;
+  isProcessing?: boolean;
   onToggleRecording: () => void;
   voiceRecorderComponent?: React.ReactNode;
   onEditorReady: (editor: Editor) => void;
+  onSave: () => void;
 }
 
 export default function TextEditor({ 
@@ -21,9 +23,11 @@ export default function TextEditor({
   onChange, 
   className = '',
   isRecording,
+  isProcessing,
   onToggleRecording,
   voiceRecorderComponent,
-  onEditorReady
+  onEditorReady,
+  onSave
 }: TextEditorProps) {
   const editorRef = useRef<HTMLDivElement>(null);
 
@@ -43,7 +47,7 @@ export default function TextEditor({
         class: `prose focus:outline-none max-w-none ${className}`,
       },
     },
-    editable: !isRecording,
+    editable: !isRecording && !isProcessing,
     // Fix SSR hydration issues
     enableInputRules: false,
     enablePasteRules: false,
@@ -56,12 +60,25 @@ export default function TextEditor({
     }
   }, [editor, onEditorReady]);
 
-  // Update editor state when isRecording changes
+  // Update editor state when isRecording or isProcessing changes
   useEffect(() => {
     if (editor) {
-      editor.setEditable(!isRecording);
+      editor.setEditable(!isRecording && !isProcessing);
     }
-  }, [editor, isRecording]);
+  }, [editor, isRecording, isProcessing]);
+
+  // Add keyboard shortcut handler
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === 's') {
+        e.preventDefault();
+        onSave();
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [onSave]);
 
   return (
     <div className="relative min-h-[300px]" ref={editorRef}>
@@ -74,7 +91,12 @@ export default function TextEditor({
       
       {/* Permanent Voice Recorder Button */}
       <div className="sticky bottom-6 flex justify-center">
-        {isRecording ? (
+        {isProcessing ? (
+          <div className="inline-flex items-center gap-2 px-6 py-3 bg-blue-50 text-blue-700 border border-blue-200 rounded-full shadow-lg">
+            <Loader2 className="h-5 w-5 animate-spin" />
+            <span className="font-medium">Processing recording...</span>
+          </div>
+        ) : isRecording ? (
           <div className="inline-flex items-center gap-2 px-6 py-3 bg-red-50 text-red-700 border border-red-200 rounded-full shadow-lg cursor-pointer hover:bg-red-100 transition-all animate-pulse"
                onClick={onToggleRecording}>
             {voiceRecorderComponent}

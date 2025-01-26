@@ -6,6 +6,7 @@ import { Mic, Square, Loader2 } from 'lucide-react';
 interface VoiceRecorderProps {
   onTranscription: (text: string) => void;
   onClose: () => void;
+  onProcessingStart: () => void;
 }
 
 // List of MIME types to try, in order of preference
@@ -26,9 +27,8 @@ function getSupportedMimeType(): string {
   throw new Error('No supported MIME type found for MediaRecorder');
 }
 
-export default function VoiceRecorder({ onTranscription, onClose }: VoiceRecorderProps) {
+export default function VoiceRecorder({ onTranscription, onClose, onProcessingStart }: VoiceRecorderProps) {
   const [duration, setDuration] = useState(0);
-  const [isProcessing, setIsProcessing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [fileSize, setFileSize] = useState(0);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
@@ -69,6 +69,7 @@ export default function VoiceRecorder({ onTranscription, onClose }: VoiceRecorde
           
           // Stop recording if size exceeds 25MB
           if (totalSize >= MAX_FILE_SIZE && mediaRecorderRef.current) {
+            onProcessingStart(); // Trigger processing state
             mediaRecorderRef.current.stop();
           }
         }
@@ -101,12 +102,12 @@ export default function VoiceRecorder({ onTranscription, onClose }: VoiceRecorde
   };
 
   const processAudio = async (audioBlob: Blob) => {
-    setIsProcessing(true);
     setError(null);
     try {
       const formData = new FormData();
       const extension = audioBlob.type.split('/')[1].split(';')[0];
       formData.append('file', audioBlob, `audio.${extension}`);
+      formData.append('duration', duration.toString());
 
       const response = await fetch('/api/transcribe', {
         method: 'POST',
@@ -133,6 +134,13 @@ export default function VoiceRecorder({ onTranscription, onClose }: VoiceRecorde
     return `${mins}:${secs.toString().padStart(2, '0')}`;
   };
 
+  const handleStopClick = () => {
+    onProcessingStart(); // Trigger processing state immediately on click
+    if (mediaRecorderRef.current) {
+      mediaRecorderRef.current.stop();
+    }
+  };
+
   if (error) {
     return (
       <>
@@ -142,28 +150,13 @@ export default function VoiceRecorder({ onTranscription, onClose }: VoiceRecorde
     );
   }
 
-  if (isProcessing) {
-    return (
-      <div className="flex items-center gap-3">
-        <div className="flex items-center gap-2">
-          <div className="flex space-x-1">
-            <div className="h-2 w-2 bg-blue-600 rounded-full animate-bounce [animation-delay:-0.3s]"></div>
-            <div className="h-2 w-2 bg-blue-600 rounded-full animate-bounce [animation-delay:-0.15s]"></div>
-            <div className="h-2 w-2 bg-blue-600 rounded-full animate-bounce"></div>
-          </div>
-        </div>
-        <div className="flex flex-col">
-          <span className="font-medium">Typing out your story...</span>
-          <span className="text-xs text-blue-600">This may take a few seconds</span>
-        </div>
-      </div>
-    );
-  }
-
   const fileSizePercentage = Math.min(100, Math.round((fileSize / MAX_FILE_SIZE) * 100));
 
   return (
-    <div className="flex items-center gap-3">
+    <div 
+      className="flex items-center gap-3"
+      onClick={handleStopClick}
+    >
       <div className="relative">
         <Mic className="h-5 w-5" />
         <div className="absolute -top-1 -right-1 h-2 w-2 rounded-full bg-red-500 animate-pulse" />
